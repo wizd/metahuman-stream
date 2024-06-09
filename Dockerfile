@@ -15,21 +15,29 @@ ENV PATH="/miniconda/bin:${PATH}"
 RUN conda create -n nerfstream python=3.10 -y
 SHELL ["conda", "run", "-n", "nerfstream", "/bin/bash", "-c"]
 
-# 安装PyTorch和其他依赖
-RUN conda install pytorch==1.12.1 torchvision==0.13.1 cudatoolkit=11.3 -c pytorch -y && \
-    pip install --no-cache-dir -r requirements.txt && \
-#    pip install --no-cache-dir "git+https://github.com/facebookresearch/pytorch3d.git" && \
-    pip install --no-cache-dir tensorflow-gpu==2.8.0 && \
-    pip install --upgrade "protobuf<=3.20.1"
-
-# 安装开发工具，例如vim
-RUN apt-get install -y vim
-
 # 将项目代码复制到容器中
 COPY . /app
 
 # 设置工作目录
 WORKDIR /app
+
+# 安装PyTorch
+RUN conda install pytorch==1.12.1 torchvision==0.13.1 cudatoolkit=11.3 -c pytorch -y
+
+# 安装其他Python依赖
+RUN pip install --no-cache-dir -r requirements.txt
+
+# 安装PyTorch3D
+#RUN pip install --no-cache-dir "git+https://github.com/facebookresearch/pytorch3d.git"
+
+# 安装TensorFlow GPU
+RUN pip install --no-cache-dir tensorflow-gpu==2.8.0
+
+# 更新protobuf版本
+RUN pip install --upgrade "protobuf<=3.20.1"
+
+# 安装开发工具，例如vim
+RUN apt-get install -y vim
 
 # 保持容器运行，开启bash
 CMD ["conda", "run", "-n", "nerfstream", "/bin/bash"]
