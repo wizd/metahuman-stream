@@ -53,8 +53,8 @@ def echo_socket(ws):
 def llm_response(message):
     from llm.LLM import LLM
     # llm = LLM().init_model('Gemini', model_path= 'gemini-pro',api_key='Your API Key', proxy_url=None)
-    # llm = LLM().init_model('ChatGPT', model_path= 'gpt-3.5-turbo',api_key='Your API Key')
-    llm = LLM().init_model('VllmGPT', model_path= 'THUDM/chatglm3-6b')
+    llm = LLM().init_model('ChatGPT')
+    #llm = LLM().init_model('VllmGPT', model_path= 'THUDM/chatglm3-6b')
     response = llm.chat(message)
     print(response)
     return response
@@ -161,8 +161,11 @@ async def run(push_url):
     video_sender = pc.addTrack(player.video)
 
     await pc.setLocalDescription(await pc.createOffer())
-    answer = await post(push_url,pc.localDescription.sdp)
-    await pc.setRemoteDescription(RTCSessionDescription(sdp=answer,type='answer'))
+    answer = await post(push_url, pc.localDescription.sdp)
+    if answer is None:
+        print('未收到有效的 SDP 响应。')
+        return
+    await pc.setRemoteDescription(RTCSessionDescription(sdp=answer, type='answer'))
 ##########################################
 # os.environ['MKL_SERVICE_FORCE_INTEL'] = '1'
 # os.environ['MULTIPROCESSING_METHOD'] = 'forkserver'                                                    
@@ -291,14 +294,14 @@ if __name__ == '__main__':
     parser.add_argument('--tts', type=str, default='edgetts') #xtts gpt-sovits
     parser.add_argument('--REF_FILE', type=str, default=None)
     parser.add_argument('--REF_TEXT', type=str, default=None)
-    parser.add_argument('--TTS_SERVER', type=str, default='http://127.0.0.1:9880') # http://localhost:9000
+    parser.add_argument('--TTS_SERVER', type=str, default='http://gpt-sovits:9880') # http://localhost:9000
     # parser.add_argument('--CHARACTER', type=str, default='test')
     # parser.add_argument('--EMOTION', type=str, default='default')
 
     parser.add_argument('--model', type=str, default='ernerf') #musetalk
 
     parser.add_argument('--transport', type=str, default='rtcpush') #rtmp webrtc rtcpush
-    parser.add_argument('--push_url', type=str, default='http://localhost:1985/rtc/v1/whip/?app=live&stream=livestream') #rtmp://localhost/live/livestream
+    parser.add_argument('--push_url', type=str, default='http://srs:1985/rtc/v1/whip/?app=live&stream=livestream') #rtmp://localhost/live/livestream
 
     parser.add_argument('--listenport', type=int, default=8010)
 

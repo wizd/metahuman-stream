@@ -1,0 +1,74 @@
+version: "3.8"
+services:
+  # Update this to the name of the service you want to work with in your docker-compose.yml file
+  mydid:
+    # Uncomment if you want to override the service's Dockerfile to one in the .devcontainer
+    # folder. Note that the path of the Dockerfile and context is relative to the *primary*
+    # docker-compose.yml file (the first in the devcontainer.json "dockerComposeFile"
+    # array). The sample below assumes your primary file is in the root of your project.
+
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+
+    volumes:
+      # Update this to wherever you want VS Code to mount the folder of your project
+      - ..:/workspaces:cached
+    ports:
+      - "8010:8010"
+      - "8000:8000"
+    runtime: nvidia
+    environment:
+      - CUDA_VISIBLE_DEVICES=0
+      - CANDIDATE='192.168.3.81'
+    # Uncomment the next four lines if you will use a ptrace-based debugger like C++, Go, and Rust.
+    # cap_add:
+    #   - SYS_PTRACE
+    # security_opt:
+    #   - seccomp:unconfined
+
+    # Overrides default command so things don't shut down after the process ends.
+    command: /bin/bash -c "while sleep 1000; do :; done"
+
+  srs:
+    image: ossrs/srs:5
+    container_name: srs
+    environment:
+      - CANDIDATE='192.168.3.81'
+    ports:
+      - "1935:1935"
+      - "8080:8080"
+      - "1985:1985"
+      - "8000:8000/udp"
+      - "10080:10080/udp"
+    command: objs/srs -c conf/rtc.conf
+
+  gpt-sovits:
+    image: breakstring/gpt-sovits:latest   # please change the image name and tag base your environment. If the tag contains the word 'elite', such as "latest-elite", it indicates that the image does not include the necessary models such as GPT-SoVITS, UVR5, Damo ASR, etc. You will need to download them yourself and map them into the container.
+    container_name: gpt-sovits-container
+    environment:
+      - is_half=False
+      - is_share=False
+    volumes:
+      - $HOME/data/gpt-sovits/output:/workspace/output
+      - $HOME/data/gpt-sovits/logs:/workspace/logs
+      - $HOME/data/gpt-sovits/SoVITS_weights:/workspace/SoVITS_weights
+      - $HOME/data/gpt-sovits/reference:/workspace/reference
+    working_dir: /workspace
+    ports:
+      - "9880:9880"
+      - "9871:9871"
+      - "9872:9872"
+      - "9873:9873"
+      - "9874:9874"
+    shm_size: 16G
+    deploy:
+      resources:
+        reservations:
+          devices:
+          - driver: nvidia
+            count: "all"
+            capabilities: [gpu]
+    stdin_open: true
+    tty: true
+    restart: unless-stopped
